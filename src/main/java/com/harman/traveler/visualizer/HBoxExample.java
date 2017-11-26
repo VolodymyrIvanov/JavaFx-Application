@@ -1,4 +1,4 @@
-package application;
+package com.harman.traveler.visualizer;
 
 import javafx.application.Application;
 import javafx.collections.ObservableList;
