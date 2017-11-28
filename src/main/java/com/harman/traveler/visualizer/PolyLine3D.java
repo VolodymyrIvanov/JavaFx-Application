@@ -11,6 +11,7 @@ import javafx.scene.shape.CullFace;
 import javafx.scene.shape.DrawMode;
 import javafx.scene.shape.MeshView;
 import javafx.scene.shape.TriangleMesh;
+import javafx.geometry.Point3D;
 
 public class PolyLine3D extends Group {
 	public List<Point3D> points; 
@@ -19,8 +20,12 @@ public class PolyLine3D extends Group {
     private TriangleMesh mesh; 
     public MeshView meshView; 
     public PhongMaterial material; 
-     
+
     public PolyLine3D(List<Point3D> points, int width, Color color) { 
+    	this(points, width, color, null);
+    }
+    
+    public PolyLine3D(List<Point3D> points, int width, Color color, Object property) { 
         this.points = points; 
         this.width = width; 
         this.color = color; 
@@ -29,8 +34,8 @@ public class PolyLine3D extends Group {
         //add each point. For each point add another point shifted on Z axis by width 
         //This extra point allows us to build triangles later 
         for(Point3D point: points) { 
-            mesh.getPoints().addAll(point.x,point.y,point.z); 
-            mesh.getPoints().addAll(point.x,point.y,point.z+width); 
+            mesh.getPoints().addAll((float)point.getX(),(float)point.getY(),(float)point.getZ()); 
+            mesh.getPoints().addAll((float)point.getX(),(float)point.getY(),(float)point.getZ()+width); 
         } 
         //add dummy Texture Coordinate 
         mesh.getTexCoords().addAll(0,0);  
@@ -54,6 +59,9 @@ public class PolyLine3D extends Group {
         meshView.setMaterial(material);  
         //Make sure you Cull the Back so that no black shows through 
         meshView.setCullFace(CullFace.BACK); 
+        if (property != null) {
+        	meshView.setUserData(property);
+        }
  
         //Add some ambient light so folks can see it 
         AmbientLight light = new AmbientLight(Color.WHITE); 

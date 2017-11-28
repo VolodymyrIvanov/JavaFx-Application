@@ -1,0 +1,28 @@
+syntax = "proto3";
+option java_package = "com.harman.learning";
+option java_outer_classname = "TraceFile";
+import "common.proto";
+
+//Record Type
+enum RecordType {
+    RAW_GPS = 0;
+    DEAD_RECKONED = 1;
+    OBSERVATION = 2;
+    INTERPOLATED = 3;
+}
+
+message TraceFileRecord {
+    uint64 timestamp = 1;
+    Position position = 2;
+    RecordType recordType = 3;
+    float heading = 4;
+    int32 speed = 5;
+    float curvature = 6;
+    float slope = 7;
+}
+
+//Entry point of trace file
+message TracePath {
+    Metadata metadata = 1;
+    repeated TraceFileRecord records = 2;
+}

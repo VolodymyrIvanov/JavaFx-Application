@@ -1,0 +1,206 @@
+syntax = "proto3";
+option java_package = "com.harman.learning";
+option java_outer_classname = "ObservationFile";
+import "common.proto";
+
+//Marking color
+enum MarkingColor {
+    WHITE = 0;
+    LIGHT_GRAY = 1;
+    GRAY = 2;
+    DARK_GRAY = 3;
+    BLACK = 4;
+    RED = 5;
+    YELLOW = 6;
+    GREEN = 7;
+    CYAN = 8;
+    BLUE = 9;
+    ORANGE = 10;
+    UNDEFINDED = 11;
+}
+
+//Traffic sign type
+enum TrafficSignType {
+    WARNING_SIGN = 0;
+    SIGNPOST = 1;
+    HIGHWAY_LOCATION_MARKER = 2;
+    OTHER = 3;
+}
+
+//Traffic sign form type
+enum TrafficSignFormType {
+    DIAMOND = 0;
+    TRIANGLE = 1;
+    PENTAGON = 2;
+    CIRCLE = 3;
+    RECTANGLE = 4;
+    CROSSBUCK = 5;
+    STOPSIGN = 6;
+    YIELDSIGN = 7;
+}
+
+//Sign meaning type
+enum TrafficSignMeaningType {
+    SPEED_LIMIT = 0;
+    SPEED_LIMIT_END = 1;
+    SPEED_LIMIT_ZONE_START = 2;
+    SPEED_LIMIT_ZONE_END = 3;
+    PASSING_RESTRICTION = 4;
+    PASSING_RESTRICTION_END = 5;
+    TRUCK_PASSING_RESTRICTION = 6;
+    TRUCK_PASSING_RESTRICTION_END = 7;
+    DERESTRICTION = 8;
+    STOP = 9;
+    YIELD = 10;
+    TOWN_START = 11;
+    TOWN_END = 12;
+    MOTORWAY_START = 13;
+    MOTORWAY_END = 14;
+    MOTORROAD_START = 15;
+    MOTORROAD_END = 16;
+    PRIORITY_ROAD_START = 17;
+    PRIORITY_ROAD_END = 18;
+    ENVIRONMENTAL_ZONE_START = 19;
+    ENVIRONMENTAL_ZONE_END = 20;
+    RESIDENTIAL_ZONE_START = 21;
+    RESIDENTIAL_ZONE_END = 22;
+    GENERAL_HAZARD = 23;
+    ROUNDABOUT = 24;
+    NO_ENTRY = 25;
+}
+
+//Marking type enumeration for lines
+enum LineMarkingType {
+    NO_MARKING = 0; //No marking - virtual lane marking
+    SINGLE_SOLID_LINE = 1;
+    DOUBLE_SOLID_LINE = 2;
+    LONG_DASHED_LINE = 3;
+    SHORT_DASHED_LINE = 4;
+    SOLID_LINE_DASHED_LINE = 5;
+    DASHED_LINE_SOLID_LINE = 6;
+    DOUBLE_DASHED_LINE = 7;
+    DASHED_BLOCKS = 8;
+    TRAFFIC_ISLAND = 9;
+    CURB = 10;
+}
+
+//Divider type
+enum DividerType {
+    GUARDRAIL = 0;
+    CONCRETE_BARRIER = 1;
+    NOISE_BARRIER = 2;
+}
+
+//Single marking type enumeration
+enum SingleMarkingType {
+    ARROW_STRAIGHT = 0;
+    ARROW_LEFT = 1;
+    ARROW_RIGHT = 2;
+    ARROW_LEFT_STRAIGHT = 3;
+    ARROW_RIGHT_STRAIGHT = 4;
+    BUS = 5;
+    ZIGZAG = 6;
+    STOP_LINE = 7;
+    YIELD_LINE = 8;
+    STOP_SIGN = 9;
+    YIELD_SIGN = 10;
+    BICYCLE = 11;
+    HOV_SIGN = 12;
+}
+
+//One traffic sign record
+message TrafficSign {
+    TrafficSignType signType = 1;
+    TrafficSignFormType formType = 2;
+    TrafficSignMeaningType meaningType = 3;
+}
+
+//Single Marking
+message SingleMarking {
+    SingleMarkingType markingType = 1;
+    MarkingColor color = 2;
+}
+
+//Line Marking
+message LineMarking {
+    LineMarkingType markingType = 1;
+    MarkingColor color = 2;
+}
+
+//Divider
+message Divider {
+    DividerType dividerType = 1;
+}
+
+//Point Observation
+message PointObservation {
+    Offset offset = 1;
+    BoundingBox boundingBox = 2;
+    oneof pointObservationType {
+        TrafficSign trafficSign = 3;
+        SingleMarking singleMarking = 4;
+    }
+}
+
+//Line Observation
+message LineObservation {
+    LinearFeature line = 1;
+    BoundingBox boundingBox = 2;
+    oneof lineObservationType {
+        LineMarking lineMarking = 3;
+        Divider divider = 4;
+    }
+}
+
+//New Entry
+message NewEntry {
+    uint64 timestamp = 1;
+    oneof observationType {
+        PointObservation pointObservation = 2;
+        LineObservation lineObservation = 3;
+    }
+    float confidence = 4;
+}
+
+//Update Point
+message UpdatePoint {
+    Offset offset = 1;
+    BoundingBox boundingBox = 2;
+}
+
+//Update Line
+message UpdateLine {
+    LinearFeature line = 1;
+    BoundingBox boundingBox = 2;
+}
+
+//Update Entry
+message UpdateEntry {
+    uint64 entryId = 1;
+    uint64 timestamp = 2;
+    oneof observationType {
+        UpdatePoint updatePoint = 3;
+        UpdateLine updateLine = 4;
+    }
+    float confidence = 5;
+}
+
+//Delete Entry
+message DeleteEntry {
+    uint64 entryId = 1;
+    uint64 timestamp = 2;
+    float confidence = 3;
+}
+
+//Observation Section
+message ObservationSection {
+    repeated NewEntry newEntries = 1;
+    repeated UpdateEntry updateEntries = 2;
+    repeated DeleteEntry deleteEntries = 3;
+}
+
+//Entry point of observation file
+message ObservationPath {
+    Metadata metadata = 1;
+    ObservationSection observations = 2;
+}

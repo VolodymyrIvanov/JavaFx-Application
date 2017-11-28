@@ -1,0 +1,63 @@
+syntax = "proto3";
+option java_package = "com.harman.learning";
+option java_outer_classname = "Common";
+
+//Position Status
+enum PositionStatus {
+    INVALID = 0;
+    UNSTABLE = 1;
+    OFFROAD = 2;
+    ONROAD = 3;
+    UNKNOWN = 4;
+}
+
+//Linear Feature Observation Type
+enum LinearFeatureObservationType {
+    START_OF_FEATURE = 0;
+    CONTINUE_OF_FEATURE = 1;
+    END_OF_FEATURE = 2;
+}
+
+//Position
+message Position {
+    double longitude = 1;
+    double latitude = 2;
+    double altitude = 3;
+    PositionStatus status = 4;
+    float confidence = 5;
+}
+
+//Offset (to observation) in m
+message Offset {
+    float x = 1;
+    float y = 2;
+    float z = 3;
+    repeated float accuracies = 4;
+}
+
+//Metadata for one trip
+message Metadata {
+    string UUID = 1;
+    uint64 tripId = 2;
+}
+
+//Incremental diff for Offset in m
+message OffsetDiff {
+    float dx = 1;
+    float dy = 2;
+    float dz = 3;
+    repeated float accuracies = 4;
+}
+
+//Bounding Box
+message BoundingBox {
+    Offset minOffset = 1;
+    Offset maxOffset = 2;
+}
+
+//Linear Feature
+message LinearFeature {
+    Offset startPoint = 1;
+    repeated OffsetDiff points = 2;
+    LinearFeatureObservationType featureObservationType = 3;
+}

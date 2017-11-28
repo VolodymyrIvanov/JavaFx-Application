@@ -1,12 +1,23 @@
 package com.harman.traveler.visualizer;
 
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileFilter;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.harman.learning.Common.Position;
+import com.harman.learning.TraceFile.TracePath;
 import com.sun.javafx.geom.Vec3d;
 import com.sun.javafx.scene.CameraHelper;
 
+import javafx.animation.FillTransition;
 import javafx.application.Application;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.geometry.Point3D;
 import javafx.scene.AmbientLight;
 import javafx.scene.Group;
@@ -15,16 +26,24 @@ import javafx.scene.PointLight;
 import javafx.scene.Scene;
 import javafx.scene.SceneAntialiasing;
 import javafx.scene.canvas.Canvas;
+import javafx.scene.effect.BlurType;
+import javafx.scene.effect.DropShadow;
+import javafx.scene.effect.Lighting;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.PickResult;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.Material;
+import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.Box;
+import javafx.scene.shape.Shape;
+import javafx.scene.shape.Shape3D;
 import javafx.scene.shape.Sphere;
 import javafx.scene.transform.Translate;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 
 public class Drag3DObject extends Application {
     private static final boolean RUN_JASON=false; 
@@ -84,37 +103,93 @@ public class Drag3DObject extends Application {
      */ 
     @Override 
     public void start(Stage stage) { 
-        Box floor = new Box(1000, 10, 1000); 
-        //floor.setTranslateY(150); 
-        //root.getChildren().add(floor); 
+      this.selectedMaterial = new PhongMaterial(Color.AQUA); 
+      this.selectedMaterial.setDiffuseColor(Color.AQUA); 
+      this.selectedMaterial.setSpecularColor(Color.AQUA); 
+    	
+        File[] files = new File("d:/Data/GroundTruth/").listFiles(new FileFilter()
+		{
+
+			@Override
+			public boolean accept(File f) {
+				// TODO Auto-generated method stub
+				return f.getName().endsWith("trs");
+			}
+		});
         
-        StackPane holder = new StackPane();
-        Canvas canvas = new Canvas(200,  300);
+        List<Point3D> points;
+        PolyLine3D line;
+        double maxX = -Double.MAX_VALUE;
+        double maxY = -Double.MAX_VALUE;
         
-        holder.getChildren().add(canvas);
-        holder.setStyle("-fx-background-color: red");
-        //root.getChildren().add(holder);
+        Point3D anchor = null;
+        for (File f : files)
+        {
+        	try {
+				TracePath traceFile = TracePath.parseFrom(new FileInputStream(f));
+				points = new ArrayList<>();
+				int start = 0;
+				if (anchor == null)
+				{
+					anchor = new Point3D(traceFile.getRecordsList().get(0).getPosition().getLongitude(),
+						traceFile.getRecordsList().get(0).getPosition().getLatitude(),
+						traceFile.getRecordsList().get(0).getPosition().getAltitude());
+					points.add(new Point3D(0, 0, 0));
+					start = 1;
+				}
+				
+				for (int i = start; i < traceFile.getRecordsList().size(); ++i)
+				{
+					Position pos = traceFile.getRecordsList().get(i).getPosition();
+					Point3D p = new Point3D((pos.getLongitude() - anchor.getX()) * 1000000,
+							(pos.getLatitude() - anchor.getY()) * 1000000,
+							0);
+					maxX = Math.max(maxX, Math.abs(p.getX()));
+					maxY = Math.max(maxY, Math.abs(p.getY()));
+					points.add(p);
+				}
+				line = new PolyLine3D(points, 3, Color.BLUE, traceFile);
+	            root.getChildren().add(line);
+				
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+        }
         
-        List<com.harman.traveler.visualizer.Point3D> points = new ArrayList<>();
-        points.add(new com.harman.traveler.visualizer.Point3D(-2500, -2500, 0));
-        points.add(new com.harman.traveler.visualizer.Point3D(-2500, 2500, 0));
-        points.add(new com.harman.traveler.visualizer.Point3D(2500, 2500, 0));
-        points.add(new com.harman.traveler.visualizer.Point3D(2500, -2500, 0));
-        points.add(new com.harman.traveler.visualizer.Point3D(-2500, -2500, 0));
+        double max = Math.max(maxX, maxY);
+        points = new ArrayList<>();
+        points.add(new Point3D(-max, -max, 0));
+        points.add(new Point3D(-max, max, 0));
+        points.add(new Point3D(max, max, 0));
+        points.add(new Point3D(max, -max, 0));
+        points.add(new Point3D(-max, -max, 0));
         
-        PolyLine3D line = new PolyLine3D(points, 10, Color.GREEN);
+        line = new PolyLine3D(points, 10, Color.GREEN);
         root.getChildren().add(line);
         
+//        double x = 0;
+//        int cnt = 0;
+//        while (x < maxX)
+//        {
+//            points = new ArrayList<>();
+//        	points.add(new Point3D(-maxX + x, -maxY, 0));
+//            points.add(new Point3D(-maxX + x, maxY, 0));
+//            line = new PolyLine3D(points, 3, Color.GREEN);
+//            x += (++cnt) * 500; 
+//            root.getChildren().add(line);
+//        }
+        int step = (int)Math.round(2 * max / 10.0);
         for (int i = 1; i < 10; ++i) {
         	points = new ArrayList<>();
-        	points.add(new com.harman.traveler.visualizer.Point3D(-2500 + i * 500, -2500, 0));
-            points.add(new com.harman.traveler.visualizer.Point3D(-2500 + i * 500, 2500, 0));
-            line = new PolyLine3D(points, 10, Color.GREEN);
+        	points.add(new Point3D(-max + i * step, -max, 0));
+            points.add(new Point3D(-max + i * step, max, 0));
+            line = new PolyLine3D(points, 3, Color.GREEN);
             root.getChildren().add(line);
             points = new ArrayList<>();
-        	points.add(new com.harman.traveler.visualizer.Point3D(-2500, -2500 + i * 500, 0));
-            points.add(new com.harman.traveler.visualizer.Point3D(2500, -2500 + i * 500, 0));
-            line = new PolyLine3D(points, 10, Color.GREEN);
+        	points.add(new Point3D(-max, -max + i * step, 0));
+            points.add(new Point3D(max, -max + i * step, 0));
+            line = new PolyLine3D(points, 3, Color.GREEN);
             root.getChildren().add(line);
         }
         
@@ -165,7 +240,7 @@ public class Drag3DObject extends Application {
         cameraTransform.getChildren().add(camera); 
         camera.setNearClip(0.1); 
         camera.setFarClip(100000.0); 
-        camera.setTranslateZ(-5000); 
+        camera.setTranslateZ(-2000); 
         cameraTransform.ry.setAngle(0.0); 
         cameraTransform.rz.setAngle(15.0); 
         cameraTransform.rx.setAngle(-105.0); 
@@ -183,9 +258,36 @@ public class Drag3DObject extends Application {
     } 
      
     private volatile boolean isPicking=false; 
+    private PhongMaterial selectedMaterial;
     private Vec3d vecIni, vecPos; 
     private double distance; 
     private Sphere s; 
+    private SimpleObjectProperty<Shape3D> selected;
+    private SimpleObjectProperty<Shape3D> selectedProperty() {
+    	if (this.selected == null) {
+    		this.selected = new SimpleObjectProperty<Shape3D>();
+    		this.selected.addListener(new ChangeListener<Shape3D>() {
+
+	@Override
+	public void changed(ObservableValue<? extends Shape3D> observable, Shape3D oldValue, Shape3D newValue) {
+		if (oldValue != null) {
+			Object oldMaterial = oldValue.getProperties().get("Material");
+			if (oldMaterial != null && oldMaterial instanceof Material) {
+				oldValue.setMaterial((Material)oldMaterial);
+			}
+		}
+		if (newValue != null) {
+			newValue.getProperties().put("Material", newValue.getMaterial());
+			newValue.setMaterial(selectedMaterial);
+		}
+	}
+    			
+    		});
+    	}
+    	return this.selected;
+    }
+    public final Shape3D getSelected() { return this.selectedProperty().get(); }
+    public final void setSelected(Shape3D selected) { this.selectedProperty().set(selected); }    
      
     private void loadControls(Scene scene) { 
         //First person shooter keyboard movement  
@@ -230,6 +332,14 @@ public class Drag3DObject extends Application {
             mouseOldX = me.getSceneX(); 
             mouseOldY = me.getSceneY(); 
             PickResult pr = me.getPickResult(); 
+            if (pr != null && pr.getIntersectedNode() != null && pr.getIntersectedNode().getUserData() != null) {
+            	Shape3D shape = (Shape3D)pr.getIntersectedNode();
+            	this.setSelected(shape);
+            	//System.out.println(p2);
+            }
+            else {
+            	this.setSelected(null);
+            }
             if(pr!=null && pr.getIntersectedNode() != null && pr.getIntersectedNode() instanceof Sphere){ 
                 distance=pr.getIntersectedDistance(); 
                 s = (Sphere) pr.getIntersectedNode(); 
