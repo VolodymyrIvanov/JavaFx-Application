@@ -7,6 +7,7 @@
     <properties>
         <protobuffer.compiler.folder>d:/Tools/protoc/bin</protobuffer.compiler.folder>
         <protobuf.input.directory.trajectory>${project.basedir}/src/main/resources/proto/trajectory</protobuf.input.directory.trajectory>
+        <geotools.version>12.1</geotools.version>
     </properties>
   
   <build>
@@ -58,6 +59,73 @@
             <artifactId>protobuf-java</artifactId>
             <version>3.3.1</version>
         </dependency>
+        <dependency>
+    		<groupId>com.vividsolutions</groupId>
+    		<artifactId>jts</artifactId>
+    		<version>1.13</version>
+		</dependency>
+		
+        <dependency>
+            <groupId>org.geotools</groupId>
+            <artifactId>gt-referencing</artifactId>
+            <version>${geotools.version}</version>
+        </dependency>
+         
+        <dependency>
+            <groupId>org.geotools</groupId>
+            <artifactId>gt-epsg-extension</artifactId>
+            <version>${geotools.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.geotools</groupId>
+            <artifactId>gt-geometry</artifactId>
+            <version>${geotools.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.geotools</groupId>
+            <artifactId>gt-opengis</artifactId>
+            <version>${geotools.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.geotools</groupId>
+            <artifactId>gt-metadata</artifactId>
+            <version>${geotools.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.geotools</groupId>
+            <artifactId>gt-coverage</artifactId>
+            <version>${geotools.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.geotools</groupId>
+            <artifactId>gt-epsg-wkt</artifactId>
+            <version>${geotools.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.geotools</groupId>
+            <artifactId>gt-epsg-hsql</artifactId>
+            <version>${geotools.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.geotools</groupId>
+            <artifactId>gt-shapefile</artifactId>
+            <version>${geotools.version}</version>
+        </dependency>
+		
     </dependencies>
-  
+	<repositories>
+        <repository>
+            <id>harman</id>
+            <!-- url>http://hikalxap71.hbi.ad.harman.com:8081/nexus/content/groups/public</url-->
+            <url>http://anaconda-jlu-suse.harman.com:8081/artifactory/remote-repos</url>
+        </repository>
+    </repositories>  
 </project>

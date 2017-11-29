@@ -10,14 +10,20 @@ import java.util.List;
 
 import com.harman.learning.Common.Position;
 import com.harman.learning.TraceFile.TracePath;
+import com.harman.traveler.visualizer.camera.CameraTransformer;
+import com.harman.traveler.visualizer.geometry.GridGeometry;
+import com.harman.traveler.visualizer.geometry.TracePathContainer;
 import com.sun.javafx.geom.Vec3d;
 import com.sun.javafx.scene.CameraHelper;
+import com.vividsolutions.jts.geom.Coordinate;
+import com.vividsolutions.jts.geom.Envelope;
 
 import javafx.animation.FillTransition;
 import javafx.application.Application;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.geometry.Bounds;
 import javafx.geometry.Point3D;
 import javafx.scene.AmbientLight;
 import javafx.scene.Group;
@@ -122,7 +128,9 @@ public class Drag3DObject extends Application {
         double maxX = -Double.MAX_VALUE;
         double maxY = -Double.MAX_VALUE;
         
-        Point3D anchor = null;
+        Coordinate anchor = null;
+        Point3D a = null;
+        Envelope sceneEnvelope = new Envelope();
         for (File f : files)
         {
         	try {
@@ -131,25 +139,34 @@ public class Drag3DObject extends Application {
 				int start = 0;
 				if (anchor == null)
 				{
-					anchor = new Point3D(traceFile.getRecordsList().get(0).getPosition().getLongitude(),
+                    anchor = new Coordinate(traceFile.getRecordsList().get(0).getPosition().getLongitude(),
+                            traceFile.getRecordsList().get(0).getPosition().getLatitude(),
+                            traceFile.getRecordsList().get(0).getPosition().getAltitude());
+					a = new Point3D(traceFile.getRecordsList().get(0).getPosition().getLongitude(),
 						traceFile.getRecordsList().get(0).getPosition().getLatitude(),
 						traceFile.getRecordsList().get(0).getPosition().getAltitude());
 					points.add(new Point3D(0, 0, 0));
 					start = 1;
 				}
-				
-				for (int i = start; i < traceFile.getRecordsList().size(); ++i)
-				{
-					Position pos = traceFile.getRecordsList().get(i).getPosition();
-					Point3D p = new Point3D((pos.getLongitude() - anchor.getX()) * 1000000,
-							(pos.getLatitude() - anchor.getY()) * 1000000,
-							0);
-					maxX = Math.max(maxX, Math.abs(p.getX()));
-					maxY = Math.max(maxY, Math.abs(p.getY()));
-					points.add(p);
-				}
-				line = new PolyLine3D(points, 3, Color.BLUE, traceFile);
-	            root.getChildren().add(line);
+                TracePathContainer container = new TracePathContainer(traceFile, 6, Color.BLUE, anchor, 1000000);
+                Envelope envelope = container.getEnvelope();
+                sceneEnvelope.expandToInclude(envelope);
+                        
+                root.getChildren().add(container);
+                
+//				for (int i = start; i < traceFile.getRecordsList().size(); ++i)
+//				{
+//					Position pos = traceFile.getRecordsList().get(i).getPosition();
+//					Point3D p = new Point3D((pos.getLongitude() - a.getX()) * 1000000,
+//							(pos.getLatitude() - a.getY()) * 1000000,
+//							0);
+//					maxX = Math.max(maxX, Math.abs(p.getX()));
+//					maxY = Math.max(maxY, Math.abs(p.getY()));
+//					points.add(p);
+//				}
+//				line = new PolyLine3D(points, 6, Color.BLUE, traceFile);
+//	            //root.getChildren().add(line);
+//	            break;
 				
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
@@ -157,16 +174,21 @@ public class Drag3DObject extends Application {
 			}
         }
         
-        double max = Math.max(maxX, maxY);
-        points = new ArrayList<>();
-        points.add(new Point3D(-max, -max, 0));
-        points.add(new Point3D(-max, max, 0));
-        points.add(new Point3D(max, max, 0));
-        points.add(new Point3D(max, -max, 0));
-        points.add(new Point3D(-max, -max, 0));
+        double max = Math.max(sceneEnvelope.getWidth(), sceneEnvelope.getHeight());
+        GridGeometry grid = new GridGeometry(new Envelope(-max, max, -max, max), 4, Color.GREEN, 10, -2.f);
+        root.getChildren().add(grid);
         
-        line = new PolyLine3D(points, 10, Color.GREEN);
-        root.getChildren().add(line);
+        
+        
+//        points = new ArrayList<>();
+//        points.add(new Point3D(-max, -max, 0));
+//        points.add(new Point3D(-max, max, 0));
+//        points.add(new Point3D(max, max, 0));
+//        points.add(new Point3D(max, -max, 0));
+//        points.add(new Point3D(-max, -max, 0));
+//        
+//        line = new PolyLine3D(points, 6, Color.GREEN);
+//        root.getChildren().add(line);
         
 //        double x = 0;
 //        int cnt = 0;
@@ -179,19 +201,19 @@ public class Drag3DObject extends Application {
 //            x += (++cnt) * 500; 
 //            root.getChildren().add(line);
 //        }
-        int step = (int)Math.round(2 * max / 10.0);
-        for (int i = 1; i < 10; ++i) {
-        	points = new ArrayList<>();
-        	points.add(new Point3D(-max + i * step, -max, 0));
-            points.add(new Point3D(-max + i * step, max, 0));
-            line = new PolyLine3D(points, 3, Color.GREEN);
-            root.getChildren().add(line);
-            points = new ArrayList<>();
-        	points.add(new Point3D(-max, -max + i * step, 0));
-            points.add(new Point3D(max, -max + i * step, 0));
-            line = new PolyLine3D(points, 3, Color.GREEN);
-            root.getChildren().add(line);
-        }
+//        int step = (int)Math.round(2 * max / 10.0);
+//        for (int i = 1; i < 10; ++i) {
+//        	points = new ArrayList<>();
+//        	points.add(new Point3D(-max + i * step, -max, 0));
+//            points.add(new Point3D(-max + i * step, max, 0));
+//            line = new PolyLine3D(points, 6, Color.GREEN);
+//            root.getChildren().add(line);
+//            points = new ArrayList<>();
+//        	points.add(new Point3D(-max, -max + i * step, 0));
+//            points.add(new Point3D(max, -max + i * step, 0));
+//            line = new PolyLine3D(points, 6, Color.GREEN);
+//            root.getChildren().add(line);
+//        }
         
 //        Sphere s = new Sphere(150); 
 //        s.setTranslateX(5); 
@@ -241,9 +263,7 @@ public class Drag3DObject extends Application {
         camera.setNearClip(0.1); 
         camera.setFarClip(100000.0); 
         camera.setTranslateZ(-2000); 
-        cameraTransform.ry.setAngle(0.0); 
-        cameraTransform.rz.setAngle(15.0); 
-        cameraTransform.rx.setAngle(-105.0); 
+        cameraTransform.setRotate(-105.0, 0.0, 15.0); 
  
         //add a Point Light for better viewing of the grid coordinate system 
         PointLight light = new PointLight(Color.GAINSBORO); 
@@ -300,24 +320,30 @@ public class Drag3DObject extends Application {
             //What key did the user press? 
             KeyCode keycode = event.getCode(); 
             //Step 2c: Add Zoom controls 
-            if (keycode == KeyCode.W) { 
+            if (keycode == KeyCode.ADD) { 
                 camera.setTranslateZ(camera.getTranslateZ() + change); 
             } 
-            if (keycode == KeyCode.S) { 
+            else if (keycode == KeyCode.SUBTRACT) { 
                 camera.setTranslateZ(camera.getTranslateZ() - change); 
             } 
             //Step 2d:  Add Strafe controls 
-            if (keycode == KeyCode.A) { 
+            else if (keycode == KeyCode.W || keycode == KeyCode.UP) { 
+                camera.setTranslateY(camera.getTranslateY() - change); 
+            } 
+            else if (keycode == KeyCode.S || keycode == KeyCode.DOWN) { 
+                camera.setTranslateY(camera.getTranslateY() + change); 
+            } 
+            else if (keycode == KeyCode.A || keycode == KeyCode.LEFT) { 
                 camera.setTranslateX(camera.getTranslateX() - change); 
             } 
-            if (keycode == KeyCode.D) { 
+            else if (keycode == KeyCode.D || keycode == KeyCode.RIGHT) { 
                 camera.setTranslateX(camera.getTranslateX() + change); 
             } 
-            if (keycode == KeyCode.R) {
-            	 camera.setTranslateZ(-5000); 
-            	 cameraTransform.ry.setAngle(0.0); 
-                 cameraTransform.rz.setAngle(15.0); 
-                 cameraTransform.rx.setAngle(-105.0);            	
+            else if (keycode == KeyCode.R) {
+            	 camera.setTranslateX(0); 
+            	 camera.setTranslateY(0);
+            	 camera.setTranslateZ(-2000);
+                 cameraTransform.setRotate(-105.0, 0.0, 15.0); 
             }
         }); 
  
@@ -399,15 +425,15 @@ public class Drag3DObject extends Application {
                         modifier = 50.0; 
                     } 
                     if (me.isPrimaryButtonDown()) { 
-                        cameraTransform.ry.setAngle(((cameraTransform.ry.getAngle() + mouseDeltaX * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180);  // + 
-                        cameraTransform.rx.setAngle(((cameraTransform.rx.getAngle() - mouseDeltaY * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180);  // - 
+                        cameraTransform.getRotateY().setAngle(((cameraTransform.getRotateY().getAngle() + mouseDeltaX * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180);  // + 
+                        cameraTransform.getRotateX().setAngle(((cameraTransform.getRotateX().getAngle() - mouseDeltaY * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180);  // - 
                     } else if (me.isSecondaryButtonDown()) { 
                         double z = camera.getTranslateZ(); 
                         double newZ = z + mouseDeltaX * modifierFactor * modifier; 
                         camera.setTranslateZ(newZ); 
                     } else if (me.isMiddleButtonDown()) { 
-                        cameraTransform.t.setX(cameraTransform.t.getX() + mouseDeltaX * modifierFactor * modifier * 0.3);  // - 
-                        cameraTransform.t.setY(cameraTransform.t.getY() + mouseDeltaY * modifierFactor * modifier * 0.3);  // - 
+                        cameraTransform.getTranslate().setX(cameraTransform.getTranslate().getX() + mouseDeltaX * modifierFactor * modifier * 0.3);  // - 
+                        cameraTransform.getTranslate().setY(cameraTransform.getTranslate().getY() + mouseDeltaY * modifierFactor * modifier * 0.3);  // - 
                     } 
                 } 
             } 
