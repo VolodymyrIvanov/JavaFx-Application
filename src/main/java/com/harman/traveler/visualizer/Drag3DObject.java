@@ -12,6 +12,7 @@ import com.harman.learning.Common.Position;
 import com.harman.learning.TraceFile.TracePath;
 import com.harman.traveler.visualizer.camera.CameraTransformer;
 import com.harman.traveler.visualizer.geometry.GridGeometry;
+import com.harman.traveler.visualizer.geometry.TraceFileRecordContainer;
 import com.harman.traveler.visualizer.geometry.TracePathContainer;
 import com.sun.javafx.geom.Vec3d;
 import com.sun.javafx.scene.CameraHelper;
@@ -24,13 +25,16 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.geometry.Bounds;
+import javafx.geometry.Insets;
 import javafx.geometry.Point3D;
+import javafx.geometry.Pos;
 import javafx.scene.AmbientLight;
 import javafx.scene.Group;
 import javafx.scene.PerspectiveCamera;
 import javafx.scene.PointLight;
 import javafx.scene.Scene;
 import javafx.scene.SceneAntialiasing;
+import javafx.scene.SubScene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.effect.BlurType;
 import javafx.scene.effect.DropShadow;
@@ -39,6 +43,9 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.PickResult;
 import javafx.scene.input.ScrollEvent;
+import javafx.scene.layout.ColumnConstraints;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.RowConstraints;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Material;
@@ -47,6 +54,7 @@ import javafx.scene.shape.Box;
 import javafx.scene.shape.Shape;
 import javafx.scene.shape.Shape3D;
 import javafx.scene.shape.Sphere;
+import javafx.scene.text.Text;
 import javafx.scene.transform.Translate;
 import javafx.stage.Stage;
 import javafx.util.Duration;
@@ -152,7 +160,16 @@ public class Drag3DObject extends Application {
                 Envelope envelope = container.getEnvelope();
                 sceneEnvelope.expandToInclude(envelope);
                         
-                root.getChildren().add(container);
+                groupContainer.getChildren().add(container);
+                
+                //To avoid z-fighting
+                TraceFileRecordContainer tc = new TraceFileRecordContainer(traceFile.getRecordsList().get(0), 6, Color.DARKRED, anchor, 1000000, 1);
+                groupContainer.getChildren().add(tc);
+              for (int i = 0; i < traceFile.getRecordsList().size(); ++i)
+              {
+                  //To avoid z-fighting add elevation
+              }
+
                 
 //				for (int i = start; i < traceFile.getRecordsList().size(); ++i)
 //				{
@@ -176,7 +193,7 @@ public class Drag3DObject extends Application {
         
         double max = Math.max(sceneEnvelope.getWidth(), sceneEnvelope.getHeight());
         GridGeometry grid = new GridGeometry(new Envelope(-max, max, -max, max), 4, Color.GREEN, 10, -2.f);
-        root.getChildren().add(grid);
+        groupContainer.getChildren().add(grid);
         
         
         
@@ -227,7 +244,8 @@ public class Drag3DObject extends Application {
      * ************************************************************************* 
      ************************ Stage Default Setup **************************** 
      *///*********************************************************************** 
-    private Group root = new Group(); 
+    private Group groupContainer = new Group(); 
+    private Text infoText = new Text();
     private PerspectiveCamera camera; 
     private final double sceneWidth = 1024; 
     private final double sceneHeight = 768; 
@@ -241,18 +259,56 @@ public class Drag3DObject extends Application {
     private double mouseDeltaY; 
  
     private void showStage(Stage stage) { 
-        Scene scene = new Scene(root, sceneWidth, sceneHeight, true, SceneAntialiasing.BALANCED); 
-        scene.setFill(Color.web("3d3d3d")); 
+        
+        GridPane root = new GridPane();
+        
+       //Setting the vertical and horizontal gaps between the columns 
+       root.setVgap(1); 
+       root.setHgap(2);       
+          
+       //Setting the Grid alignment 
+       root.setAlignment(Pos.CENTER);
+       ColumnConstraints column = new ColumnConstraints();
+       column.setPercentWidth(80);
+       root.getColumnConstraints().add(column);
+
+       column = new ColumnConstraints();
+       column.setPercentWidth(20);
+       root.getColumnConstraints().add(column);
+       
+       RowConstraints row = new RowConstraints();
+       row.setPercentHeight(100);
+       root.getRowConstraints().add(row);
+       
+       infoText.setText("Info Panel");
+       
+       StackPane infoPanel = new StackPane(infoText);
+       infoPanel.setAlignment(Pos.TOP_LEFT);
+       infoPanel.setStyle("-fx-background-color: gray");
+       
+       StackPane viewPanel = new StackPane();
+       viewPanel.setStyle("-fx-background-color: magenta");
+       
+       root.add(viewPanel, 0, 0);
+       root.add(infoPanel, 1, 0);
+       
+        Scene scene = new Scene(root, sceneWidth + infoPanel.getWidth(), sceneHeight);
+        SubScene subScene = new SubScene(groupContainer, sceneWidth, sceneHeight, true, SceneAntialiasing.BALANCED);
+        subScene.setFill(Color.web("3d3d3d")); 
  
-        loadCamera(scene); 
-        loadControls(scene); 
+        loadCamera(subScene); 
+        loadControls(subScene); 
  
+        viewPanel.getChildren().add(subScene);
+        subScene.heightProperty().bind(viewPanel.heightProperty());
+        subScene.widthProperty().bind(viewPanel.widthProperty());
+        
         stage.setTitle("F(X)yz Sample: 3D Dragging"); 
         stage.setScene(scene); 
         stage.show(); 
     } 
  
-    private void loadCamera(Scene scene) { 
+    private void loadCamera(SubScene scene) { 
         //initialize camera 
         camera = new PerspectiveCamera(true); 
         camera.setVerticalFieldOfView(RUN_JASON); 
@@ -290,15 +346,18 @@ public class Drag3DObject extends Application {
 
 	@Override
 	public void changed(ObservableValue<? extends Shape3D> observable, Shape3D oldValue, Shape3D newValue) {
-		if (oldValue != null) {
+		if (oldValue != null && oldValue.getUserData() != null) {
 			Object oldMaterial = oldValue.getProperties().get("Material");
 			if (oldMaterial != null && oldMaterial instanceof Material) {
 				oldValue.setMaterial((Material)oldMaterial);
 			}
+			infoText.setText("");
 		}
-		if (newValue != null) {
+		if (newValue != null && newValue.getUserData() != null) {
 			newValue.getProperties().put("Material", newValue.getMaterial());
 			newValue.setMaterial(selectedMaterial);
+			Object userData = newValue.getUserData();
+			infoText.setText(userData.toString());
 		}
 	}
     			
@@ -309,7 +368,7 @@ public class Drag3DObject extends Application {
     public final Shape3D getSelected() { return this.selectedProperty().get(); }
     public final void setSelected(Shape3D selected) { this.selectedProperty().set(selected); }    
      
-    private void loadControls(Scene scene) { 
+    private void loadControls(SubScene scene) { 
         //First person shooter keyboard movement  
         scene.setOnKeyPressed(event -> { 
             double change = 10.0; 

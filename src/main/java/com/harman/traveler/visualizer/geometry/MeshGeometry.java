@@ -19,6 +19,7 @@ import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.LineSegment;
 import com.vividsolutions.jts.geom.LineString;
+import com.vividsolutions.jts.geom.Polygon;
 import com.vividsolutions.jts.operation.buffer.BufferParameters;
 
 import javafx.scene.AmbientLight;
@@ -32,6 +33,8 @@ import javafx.scene.shape.MeshView;
 import javafx.scene.shape.TriangleMesh;
 
 /**
+ * Basic geometry class to build geometry primitives.
+ * 
  * @author VIvanov
  *
  */
@@ -98,5 +101,21 @@ public class MeshGeometry extends Group
         // Back (CCW)
         mesh.getFaces().addAll(lastIndex - 3, 0, lastIndex - 1, 0, lastIndex - 2, 0);
         mesh.getFaces().addAll(lastIndex - 3, 0, lastIndex, 0, lastIndex - 1, 0);
+    }
+    
+    protected void addTriangle(Polygon poly, float height)
+    {
+        // Must be 4 points - last point is equal to first ones
+        for (int j = 0; j < poly.getCoordinates().length - 1; ++j)
+        {
+            Coordinate c = poly.getCoordinates()[j];
+            mesh.getPoints().addAll((float) c.x, (float) c.y, height);
+        }
+        // Add 2 faces (front and back)
+        int lastIndex = mesh.getPoints().size() / 3 - 1;
+        // Front (CW)
+        mesh.getFaces().addAll(lastIndex - 2, 0, lastIndex - 1, 0, lastIndex, 0);
+        // Back (CCW)
+        mesh.getFaces().addAll(lastIndex - 2, 0, lastIndex, 0, lastIndex - 1, 0);
     }
 }
