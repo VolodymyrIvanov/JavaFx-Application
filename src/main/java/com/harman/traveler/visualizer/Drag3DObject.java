@@ -21,6 +21,7 @@ import com.vividsolutions.jts.geom.Envelope;
 
 import javafx.animation.FillTransition;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -36,13 +37,20 @@ import javafx.scene.Scene;
 import javafx.scene.SceneAntialiasing;
 import javafx.scene.SubScene;
 import javafx.scene.canvas.Canvas;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuBar;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.effect.BlurType;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.effect.Lighting;
 import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCodeCombination;
+import javafx.scene.input.KeyCombination;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.PickResult;
 import javafx.scene.input.ScrollEvent;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.RowConstraints;
@@ -56,6 +64,8 @@ import javafx.scene.shape.Shape3D;
 import javafx.scene.shape.Sphere;
 import javafx.scene.text.Text;
 import javafx.scene.transform.Translate;
+import javafx.stage.DirectoryChooser;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
@@ -260,25 +270,68 @@ public class Drag3DObject extends Application {
  
     private void showStage(Stage stage) { 
         
-        GridPane root = new GridPane();
+        BorderPane root = new BorderPane(); 
+        MenuBar menuBar = new MenuBar();
+        menuBar.prefWidthProperty().bind(stage.widthProperty());
+        root.setTop(menuBar);
+
+        Menu sceneMenu = new Menu("_Scene");
+        sceneMenu.setMnemonicParsing(true);
+        
+        MenuItem newMenuItem = new MenuItem("_New");
+        newMenuItem.setMnemonicParsing(true);
+        newMenuItem.setAccelerator(new KeyCodeCombination(KeyCode.N, KeyCombination.SHORTCUT_DOWN));
+        sceneMenu.getItems().add(newMenuItem);
+        
+        MenuItem addFileMenuItem = new MenuItem("Add Track _File");
+        addFileMenuItem.setMnemonicParsing(true);
+        addFileMenuItem.setAccelerator(new KeyCodeCombination(KeyCode.F, KeyCombination.SHORTCUT_DOWN));
+        sceneMenu.getItems().add(addFileMenuItem);
+        addFileMenuItem.setOnAction(actionEvent ->
+        {
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle("Open Resource File");
+            fileChooser.showOpenDialog(stage);
+        });
+        
+        MenuItem addDirMenuItem = new MenuItem("Add Tracks _Directory");
+        addDirMenuItem.setMnemonicParsing(true);
+        addDirMenuItem.setAccelerator(new KeyCodeCombination(KeyCode.D, KeyCombination.SHORTCUT_DOWN));
+        sceneMenu.getItems().add(addDirMenuItem);
+        addDirMenuItem.setOnAction(actionEvent ->
+        {
+            DirectoryChooser directoryChooser = new DirectoryChooser();
+            directoryChooser.setTitle("Open Resource File");
+            directoryChooser.showDialog(stage);
+        });
+        
+        sceneMenu.getItems().add(new SeparatorMenuItem());
+        
+        MenuItem exitMenuItem = new MenuItem("Exit");
+        sceneMenu.getItems().add(exitMenuItem);
+        exitMenuItem.setOnAction(actionEvent -> Platform.exit());
+
+        menuBar.getMenus().addAll(sceneMenu);
+        GridPane grid = new GridPane();
+        root.setCenter(grid);
         
        //Setting the vertical and horizontal gaps between the columns 
-       root.setVgap(1); 
-       root.setHgap(2);       
+       grid.setVgap(1); 
+       grid.setHgap(2);       
           
        //Setting the Grid alignment 
-       root.setAlignment(Pos.CENTER);
+       grid.setAlignment(Pos.CENTER);
        ColumnConstraints column = new ColumnConstraints();
        column.setPercentWidth(80);
-       root.getColumnConstraints().add(column);
+       grid.getColumnConstraints().add(column);
 
        column = new ColumnConstraints();
        column.setPercentWidth(20);
-       root.getColumnConstraints().add(column);
+       grid.getColumnConstraints().add(column);
        
        RowConstraints row = new RowConstraints();
        row.setPercentHeight(100);
-       root.getRowConstraints().add(row);
+       grid.getRowConstraints().add(row);
        
        infoText.setText("Info Panel");
        
@@ -289,8 +342,8 @@ public class Drag3DObject extends Application {
        StackPane viewPanel = new StackPane();
        viewPanel.setStyle("-fx-background-color: magenta");
        
-       root.add(viewPanel, 0, 0);
-       root.add(infoPanel, 1, 0);
+       grid.add(viewPanel, 0, 0);
+       grid.add(infoPanel, 1, 0);
        
         Scene scene = new Scene(root, sceneWidth + infoPanel.getWidth(), sceneHeight);
         SubScene subScene = new SubScene(groupContainer, sceneWidth, sceneHeight, true, SceneAntialiasing.BALANCED);
