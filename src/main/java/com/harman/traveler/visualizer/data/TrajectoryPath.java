@@ -11,6 +11,12 @@
  */
 package com.harman.traveler.visualizer.data;
 
+import java.io.File;
+import java.util.List;
+
+import com.harman.traveler.visualizer.Tuple2;
+import com.harman.traveler.visualizer.geometry.ObservationPathContainer;
+import com.harman.traveler.visualizer.geometry.TraceFileRecordContainer;
 import com.harman.traveler.visualizer.geometry.TracePathContainer;
 
 /**
@@ -24,4 +30,16 @@ public class TrajectoryPath
 {
     private TracePathContainer tracePathLine;
     
+    private List<Tuple2<TraceFileRecordContainer, List<ObservationPathContainer>>> observations;
+    
+    public TrajectoryPath(File traceFile, List<File> observationFiles)
+    {
+        super();
+        loadData(traceFile, observationFiles);
+    }
+    
+    public void loadData(File traceFile, List<File> observationFiles)
+    {
+        
+    }
 }

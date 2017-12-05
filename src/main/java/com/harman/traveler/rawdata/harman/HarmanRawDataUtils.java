@@ -12,7 +12,6 @@
 package com.harman.traveler.rawdata.harman;
 
 import java.util.List;
-import java.util.Map;
 
 import com.harman.learning.Common.LinearFeature;
 import com.harman.learning.Common.Offset;
@@ -23,6 +22,7 @@ import com.harman.traveler.core.transform.CoordinateSystemTransformer;
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.LineString;
+import com.vividsolutions.jts.geom.Point;
 import com.vividsolutions.jts.linearref.LinearGeometryBuilder;
 
 /**
@@ -67,5 +67,14 @@ public class HarmanRawDataUtils
             prevCoord = c;
         }
         return (LineString)builder.getGeometry();
+    }
+    
+    public static Point generateObservationPoint(Position observationPoint, Offset offset)
+    {
+        Coordinate coord = new Coordinate(
+                observationPoint.getLongitude() + CoordinateSystemTransformer.metresToWgs(offset.getX()),
+                observationPoint.getLatitude() + CoordinateSystemTransformer.metresToWgs(offset.getY()),
+                observationPoint.getAltitude() + offset.getZ());
+        return factory.createPoint(coord);
     }
 }

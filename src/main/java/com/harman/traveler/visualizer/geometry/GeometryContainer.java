@@ -33,11 +33,32 @@ public abstract class GeometryContainer<T> extends MeshGeometry
     
     protected Envelope envelope;
     
-    public GeometryContainer(T data, int lineWidth, Color color, CoordinateFilter coordTransformer)
+    protected int lineWidth;
+    
+    protected Coordinate anchor;
+    
+    protected float scale;
+    
+    protected CoordinateFilter coordinateTransformer;
+    
+    public GeometryContainer(T data, int lineWidth, Color color, Coordinate anchor, float scale)
     {
         super(color);
         this.data = data;
-        buildGeometry(lineWidth, coordTransformer);
+        this.lineWidth = lineWidth;
+        this.anchor = anchor;
+        this.scale = scale;
+        this.coordinateTransformer = new CoordinateFilter()
+        {
+            @Override
+            public void filter(Coordinate coord)
+            {
+                coord.x -= anchor.x;
+                coord.y -= anchor.y;
+                coord.x *= scale;
+                coord.y *= scale;
+            }
+        };
         super.meshView.setUserData(this);
     }
     
@@ -46,12 +67,16 @@ public abstract class GeometryContainer<T> extends MeshGeometry
      */
     public Envelope getEnvelope()
     {
+        if (envelope == null)
+        {
+            buildGeometry();
+        }
         return envelope;
     }
 
-    protected void buildGeometry(int lineWidth, CoordinateFilter coordTransformer)
+    protected void buildGeometry()
     {
-        this.envelope = injectGeometryIntoMesh(lineWidth, coordTransformer);
+        this.envelope = injectGeometryIntoMesh();
         mesh.getTexCoords().addAll(0, 0);
     }
     
@@ -86,7 +111,7 @@ public abstract class GeometryContainer<T> extends MeshGeometry
         return trianglePoly;
     }
     
-    protected abstract Envelope injectGeometryIntoMesh(int lineWidth, CoordinateFilter coordTransformer);
+    protected abstract Envelope injectGeometryIntoMesh();
     
     public abstract String getInfo();
 }

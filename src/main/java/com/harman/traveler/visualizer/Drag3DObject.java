@@ -137,7 +137,7 @@ public class Drag3DObject extends Application {
 			@Override
 			public boolean accept(File f) {
 				// TODO Auto-generated method stub
-				return f.getName().endsWith("trs");
+				return f.getName().endsWith("trs") || f.getName().endsWith("obs");
 			}
 		});
         
@@ -152,33 +152,25 @@ public class Drag3DObject extends Application {
         for (File f : files)
         {
         	try {
-				TracePath traceFile = TracePath.parseFrom(new FileInputStream(f));
-				points = new ArrayList<>();
-				int start = 0;
-				if (anchor == null)
-				{
-                    anchor = new Coordinate(traceFile.getRecordsList().get(0).getPosition().getLongitude(),
-                            traceFile.getRecordsList().get(0).getPosition().getLatitude(),
-                            traceFile.getRecordsList().get(0).getPosition().getAltitude());
-					a = new Point3D(traceFile.getRecordsList().get(0).getPosition().getLongitude(),
-						traceFile.getRecordsList().get(0).getPosition().getLatitude(),
-						traceFile.getRecordsList().get(0).getPosition().getAltitude());
-					points.add(new Point3D(0, 0, 0));
-					start = 1;
-				}
-                TracePathContainer container = new TracePathContainer(traceFile, 6, Color.BLUE, anchor, 1000000);
-                Envelope envelope = container.getEnvelope();
-                sceneEnvelope.expandToInclude(envelope);
-                        
-                groupContainer.getChildren().add(container);
-                
-                //To avoid z-fighting
-                TraceFileRecordContainer tc = new TraceFileRecordContainer(traceFile.getRecordsList().get(0), 6, Color.DARKRED, anchor, 1000000, 1);
-                groupContainer.getChildren().add(tc);
-              for (int i = 0; i < traceFile.getRecordsList().size(); ++i)
-              {
-                  //To avoid z-fighting add elevation
-              }
+        	    if (f.getName().endsWith("trs"))
+        	    {
+                    TracePath traceFile = TracePath.parseFrom(new FileInputStream(f));
+                    if (anchor == null)
+                    {
+                        anchor = new Coordinate(traceFile.getRecordsList().get(0).getPosition().getLongitude(),
+                                traceFile.getRecordsList().get(0).getPosition().getLatitude(),
+                                traceFile.getRecordsList().get(0).getPosition().getAltitude());
+                    }
+                    TracePathContainer container = new TracePathContainer(traceFile, 6, Color.BLUE, anchor, 1000000);
+                    Envelope envelope = container.getEnvelope();
+                    sceneEnvelope.expandToInclude(envelope);
+                            
+                    groupContainer.getChildren().add(container);
+                    
+                    //To avoid z-fighting
+                    TraceFileRecordContainer tc = new TraceFileRecordContainer(traceFile.getRecordsList().get(0), 6, Color.DARKRED, anchor, 1000000, 1);
+                    groupContainer.getChildren().add(tc);
+        	    }
 
                 
 //				for (int i = start; i < traceFile.getRecordsList().size(); ++i)

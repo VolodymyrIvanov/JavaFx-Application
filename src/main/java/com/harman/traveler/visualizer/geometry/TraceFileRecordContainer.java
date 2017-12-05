@@ -37,7 +37,8 @@ public class TraceFileRecordContainer extends GeometryContainer<TraceFileRecord>
     public TraceFileRecordContainer(TraceFileRecord data, int lineWidth, Color color, Coordinate anchor, float scale,
             float elevation)
     {
-        super(data, lineWidth, color, new CoordinateFilter()
+        super(data, lineWidth, color, anchor, scale);
+        this.coordinateTransformer = new CoordinateFilter()
         {
             @Override
             public void filter(Coordinate coord)
@@ -48,18 +49,18 @@ public class TraceFileRecordContainer extends GeometryContainer<TraceFileRecord>
                 coord.x *= scale;
                 coord.y *= scale;
             }
-        });
+        };
     }
 
     @Override
-    protected Envelope injectGeometryIntoMesh(int lineWidth, CoordinateFilter coordTransformer)
+    protected Envelope injectGeometryIntoMesh()
     {
         Position pos = data.getPosition();
         float heading = data.getHeading();
         Point point = factory.createPoint(new Coordinate(pos.getLongitude(), pos.getLatitude(), 0.0));
-        if (coordTransformer != null)
+        if (coordinateTransformer != null)
         {
-            point.apply(coordTransformer);
+            point.apply(coordinateTransformer);
             point.geometryChanged();
         }
         Polygon trianglePoly = super.createTriangle(point, lineWidth, -heading);

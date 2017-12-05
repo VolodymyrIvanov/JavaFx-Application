@@ -18,7 +18,6 @@ import com.harman.learning.TraceFile.RecordType;
 import com.harman.traveler.core.transform.CoordinateSystemTransformer;
 import com.harman.traveler.rawdata.harman.HarmanRawDataUtils;
 import com.vividsolutions.jts.geom.Coordinate;
-import com.vividsolutions.jts.geom.CoordinateFilter;
 import com.vividsolutions.jts.geom.Envelope;
 import com.vividsolutions.jts.geom.LineString;
 import com.vividsolutions.jts.geom.Point;
@@ -38,27 +37,17 @@ public class TracePathContainer extends GeometryContainer<TracePath>
     
     public TracePathContainer(TracePath data, int lineWidth, Color color, Coordinate anchor, float scale)
     {
-        super(data, lineWidth, color, new CoordinateFilter()
-        {
-            @Override
-            public void filter(Coordinate coord)
-            {
-                coord.x -= anchor.x;
-                coord.y -= anchor.y;
-                coord.x *= scale;
-                coord.y *= scale;
-            }
-        });
+        super(data, lineWidth, color, anchor, scale);
         evaluatePathLength();
     }
 
     @Override
-    protected Envelope injectGeometryIntoMesh(int lineWidth, CoordinateFilter coordTransformer)
+    protected Envelope injectGeometryIntoMesh()
     {
         LineString line = HarmanRawDataUtils.generateGpsTrackLine(((TracePath)data).getRecordsList());
-        if (coordTransformer != null)
+        if (coordinateTransformer != null)
         {
-            line.apply(coordTransformer);
+            line.apply(coordinateTransformer);
             line.geometryChanged();
         }
         
@@ -73,9 +62,9 @@ public class TracePathContainer extends GeometryContainer<TracePath>
                 Position pos = rec.getPosition();
                 float heading = rec.getHeading();
                 Point point = factory.createPoint(new Coordinate(pos.getLongitude(), pos.getLatitude(), 0.0));
-                if (coordTransformer != null)
+                if (coordinateTransformer != null)
                 {
-                    point.apply(coordTransformer);
+                    point.apply(coordinateTransformer);
                     point.geometryChanged();
                 }
                 Polygon trianglePoly = super.createTriangle(point, lineWidth, -heading);
