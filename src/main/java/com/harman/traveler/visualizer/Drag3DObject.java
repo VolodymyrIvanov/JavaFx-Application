@@ -6,12 +6,18 @@ import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 import com.harman.learning.Common.Position;
 import com.harman.learning.TraceFile.TracePath;
 import com.harman.traveler.visualizer.camera.CameraTransformer;
+import com.harman.traveler.visualizer.data.TrajectoryPath;
 import com.harman.traveler.visualizer.geometry.GridGeometry;
+import com.harman.traveler.visualizer.geometry.ObservationPathContainer;
 import com.harman.traveler.visualizer.geometry.TraceFileRecordContainer;
 import com.harman.traveler.visualizer.geometry.TracePathContainer;
 import com.sun.javafx.geom.Vec3d;
@@ -141,38 +147,73 @@ public class Drag3DObject extends Application {
 			}
 		});
         
+        Map<String, List<File>> trips = Arrays.asList(files).stream()
+            .collect(Collectors.groupingBy(file -> file.getName().substring(0, file.getName().lastIndexOf('.'))));
+        
+        
+        for (Entry<String, List<File>> trip : trips.entrySet())
+        {
+            File traceFile = null;
+            List<File> observations = new ArrayList<>();
+            for (File f : trip.getValue())
+            {
+                if (f.getName().endsWith("trs"))
+                {
+                    traceFile = f;
+                }
+                else
+                {
+                    observations.add(f);
+                }
+            }
+            if (traceFile != null)
+            {
+                TrajectoryPath path = new TrajectoryPath(traceFile, observations, null);
+                sceneEnvelope.expandToInclude(path.getEnvelope());
+                groupContainer.getChildren().add(path.getTracePathLine());
+                for (Tuple2<TraceFileRecordContainer, List<ObservationPathContainer>> observationPoint : path.getObservations())
+                {
+                    groupContainer.getChildren().add(observationPoint._1);
+                    for (ObservationPathContainer observation : observationPoint._2)
+                    {
+                        groupContainer.getChildren().add(observation);
+                    }
+                }
+            }
+        }
+        
         List<Point3D> points;
         PolyLine3D line;
         double maxX = -Double.MAX_VALUE;
         double maxY = -Double.MAX_VALUE;
         
-        Coordinate anchor = null;
-        Point3D a = null;
-        Envelope sceneEnvelope = new Envelope();
-        for (File f : files)
-        {
-        	try {
-        	    if (f.getName().endsWith("trs"))
-        	    {
-                    TracePath traceFile = TracePath.parseFrom(new FileInputStream(f));
-                    if (anchor == null)
-                    {
-                        anchor = new Coordinate(traceFile.getRecordsList().get(0).getPosition().getLongitude(),
-                                traceFile.getRecordsList().get(0).getPosition().getLatitude(),
-                                traceFile.getRecordsList().get(0).getPosition().getAltitude());
-                    }
-                    TracePathContainer container = new TracePathContainer(traceFile, 6, Color.BLUE, anchor, 1000000);
-                    Envelope envelope = container.getEnvelope();
-                    sceneEnvelope.expandToInclude(envelope);
-                            
-                    groupContainer.getChildren().add(container);
-                    
-                    //To avoid z-fighting
-                    TraceFileRecordContainer tc = new TraceFileRecordContainer(traceFile.getRecordsList().get(0), 6, Color.DARKRED, anchor, 1000000, 1);
-                    groupContainer.getChildren().add(tc);
-        	    }
-
-                
+//        Coordinate anchor = null;
+//        Point3D a = null;
+//        
+//        for (File f : files)
+//        {
+//        	try {
+//        	    if (f.getName().endsWith("trs"))
+//        	    {
+//                    TracePath traceFile = TracePath.parseFrom(new FileInputStream(f));
+//                    if (anchor == null)
+//                    {
+//                        anchor = new Coordinate(traceFile.getRecordsList().get(0).getPosition().getLongitude(),
+//                                traceFile.getRecordsList().get(0).getPosition().getLatitude(),
+//                                traceFile.getRecordsList().get(0).getPosition().getAltitude());
+//                    }
+//                    TracePathContainer container = new TracePathContainer(traceFile, 6, Color.BLUE, anchor, 1000000);
+//                    Envelope envelope = container.getEnvelope();
+//                    sceneEnvelope.expandToInclude(envelope);
+//                            
+//                    groupContainer.getChildren().add(container);
+//                    
+//                    //To avoid z-fighting
+//                    TraceFileRecordContainer tc = new TraceFileRecordContainer(traceFile.getRecordsList().get(0), 6, Color.DARKRED, anchor, 1000000, 1);
+//                    groupContainer.getChildren().add(tc);
+//        	    }
+//
+//                
 //				for (int i = start; i < traceFile.getRecordsList().size(); ++i)
 //				{
 //					Position pos = traceFile.getRecordsList().get(i).getPosition();
@@ -186,15 +227,16 @@ public class Drag3DObject extends Application {
 //				line = new PolyLine3D(points, 6, Color.BLUE, traceFile);
 //	            //root.getChildren().add(line);
 //	            break;
-				
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-        }
+//				
+//			} catch (IOException e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			}
+//        }
         
         double max = Math.max(sceneEnvelope.getWidth(), sceneEnvelope.getHeight());
-        GridGeometry grid = new GridGeometry(new Envelope(-max, max, -max, max), 4, Color.GREEN, 10, -2.f);
+        GridGeometry grid = new GridGeometry(sceneEnvelope, 4, Color.GREEN, 10, -2.f);
+//        GridGeometry grid = new GridGeometry(new Envelope(-max, max, -max, max), 4, Color.GREEN, 10, -2.f);
         groupContainer.getChildren().add(grid);
         
         
@@ -252,6 +294,7 @@ public class Drag3DObject extends Application {
     private final double sceneWidth = 1024; 
     private final double sceneHeight = 768; 
     private final CameraTransformer cameraTransform = new CameraTransformer(); 
+    private Envelope sceneEnvelope = new Envelope();
  
     private double mousePosX; 
     private double mousePosY; 
@@ -363,7 +406,9 @@ public class Drag3DObject extends Application {
         cameraTransform.getChildren().add(camera); 
         camera.setNearClip(0.1); 
         camera.setFarClip(100000.0); 
-        camera.setTranslateZ(-2000); 
+        camera.setTranslateZ(-2000);
+//        camera.setTranslateX(sceneEnvelope.centre().x); 
+//        camera.setTranslateY(sceneEnvelope.centre().y);
         cameraTransform.setRotate(-105.0, 0.0, 15.0); 
  
         //add a Point Light for better viewing of the grid coordinate system 
@@ -444,8 +489,8 @@ public class Drag3DObject extends Application {
                 camera.setTranslateX(camera.getTranslateX() + change); 
             } 
             else if (keycode == KeyCode.R) {
-            	 camera.setTranslateX(0); 
-            	 camera.setTranslateY(0);
+                camera.setTranslateX(sceneEnvelope.centre().x); 
+                camera.setTranslateY(sceneEnvelope.centre().y);
             	 camera.setTranslateZ(-2000);
                  cameraTransform.setRotate(-105.0, 0.0, 15.0); 
             }

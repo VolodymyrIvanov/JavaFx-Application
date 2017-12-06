@@ -43,8 +43,11 @@ public class TraceFileRecordContainer extends GeometryContainer<TraceFileRecord>
             @Override
             public void filter(Coordinate coord)
             {
-                coord.x -= anchor.x;
-                coord.y -= anchor.y;
+                if (anchor != null)
+                {
+                    coord.x -= anchor.x;
+                    coord.y -= anchor.y;
+                }
                 coord.z = elevation;
                 coord.x *= scale;
                 coord.y *= scale;

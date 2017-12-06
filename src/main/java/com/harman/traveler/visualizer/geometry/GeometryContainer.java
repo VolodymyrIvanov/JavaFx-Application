@@ -53,8 +53,11 @@ public abstract class GeometryContainer<T> extends MeshGeometry
             @Override
             public void filter(Coordinate coord)
             {
-                coord.x -= anchor.x;
-                coord.y -= anchor.y;
+                if (anchor != null)
+                {
+                    coord.x -= anchor.x;
+                    coord.y -= anchor.y;
+                }
                 coord.x *= scale;
                 coord.y *= scale;
             }
@@ -72,6 +75,14 @@ public abstract class GeometryContainer<T> extends MeshGeometry
             buildGeometry();
         }
         return envelope;
+    }
+
+    /**
+     * @return the data
+     */
+    public T getData()
+    {
+        return data;
     }
 
     protected void buildGeometry()
@@ -111,7 +122,7 @@ public abstract class GeometryContainer<T> extends MeshGeometry
         return trianglePoly;
     }
     
-    protected abstract Envelope injectGeometryIntoMesh();
-    
     public abstract String getInfo();
+    
+    protected abstract Envelope injectGeometryIntoMesh();
 }
